@@ -1,0 +1,33 @@
+{% if user.is_authenticated %}
+    Welcome, {{ user.username }} |
+    <a href="{% url 'logout' %}">Logout</a>
+{% else %}
+    <a href="{% url 'login' %}">Login</a> |
+    <a href="{% url 'signup' %}">Signup</a>
+{% endif %}
+
+<a href="{% url 'my_orders' %}">📦 My Orders</a>
+
+<a href="/cart/">🛒 View Cart</a>
+<hr>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sri Krishna Store</title>
+</head>
+<body>
+
+<h1>Sri Krishna Store</h1>
+
+<h2>Products</h2>
+
+{% for product in products %}
+  <a href="{% url 'product_detail' product.id %}">
+    <img src="{{ product.image.url }}" width="200">
+  </a>
+  <p>₹{{ product.price }}</p>
+{% endfor %}
+
+
+</body>
+</html>

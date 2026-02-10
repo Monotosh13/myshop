@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checkout</title>
+</head>
+<body>
+
+<h1>Checkout 🧾</h1>
+
+<h3>Order Summary</h3>
+<ul>
+{% for item in cart_items %}
+    <li>
+        {{ item.product.name }} × {{ item.quantity }} — ₹{{ item.item_total }}
+    </li>
+{% endfor %}
+</ul>
+
+<p>Subtotal: ₹{{ total_price }}</p>
+<p>GST (18%): ₹{{ gst|floatformat:2 }}</p>
+<h2>Grand Total: ₹{{ grand_total|floatformat:2 }}</h2>
+
+<hr>
+
+<h3>Customer Details</h3>
+
+<form method="post">
+    {% csrf_token %}
+    <label>Name:</label><br>
+    <input type="text" name="name" required><br><br>
+
+    <label>Phone:</label><br>
+    <input type="text" name="phone" required><br><br>
+
+    <label>Address:</label><br>
+    <textarea name="address" required></textarea><br><br>
+
+    <button type="submit">Place Order</button>
+</form>
+
+<br>
+<a href="/cart/">⬅ Back to Cart</a>
+
+</body>
+</html>
