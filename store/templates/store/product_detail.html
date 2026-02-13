@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ product.name }}</title>
+</head>
+<body>
+
+<h1>{{ product.name }}</h1>
+
+<img src="{{ product.image.url }}" width="300">
+
+<p><strong>Price:</strong> ₹{{ product.price }}</p>
+
+<p><strong>Description:</strong><br>
+{{ product.description }}
+</p>
+
+<form method="post" action="{% url 'add_to_cart' product.id %}">
+    {% csrf_token %}
+
+    <label>Size:</label>
+    <select name="size" required>
+        <option value="S">Small</option>
+        <option value="M">Medium</option>
+        <option value="L">Large</option>
+    </select>
+
+    <br><br>
+
+    <label>Quantity:</label>
+    <input type="number" name="quantity" value="1" min="1">
+
+    <br><br>
+
+    <button type="submit">Add to Cart</button>
+</form>
+
+<br>
+<a href="/">⬅ Back to Home</a>
+
+</body>
+</html>
