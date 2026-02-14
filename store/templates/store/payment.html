@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment</title>
+</head>
+<body>
+
+<h1>Scan & Pay Using SBI QR</h1>
+
+<h2>Amount to Pay: ₹{{ grand_total|floatformat:2 }}</h2>
+
+<img src="/media/qr/monotosh.png" width="300">
+
+<p>After payment, please provide details below:</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label>Phone Number:</label><br>
+    <input type="text" name="phone" required>
+    <br><br>
+
+    <label>Upload Payment Screenshot:</label><br>
+    <input type="file" name="payment_screenshot" required>
+    <br><br>
+
+    <label>Last 6 Digits of UTR (Optional):</label><br>
+    <input type="text" name="utr_last6" maxlength="6">
+    <br><br>
+
+    <button type="submit">Confirm Payment</button>
+</form>
+
+</body>
+</html>

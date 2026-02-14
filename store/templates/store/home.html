@@ -21,12 +21,37 @@
 
 <h2>Products</h2>
 
-{% for product in products %}
-  <a href="{% url 'product_detail' product.id %}">
-    <img src="{{ product.image.url }}" width="200">
-  </a>
-  <p>₹{{ product.price }}</p>
-{% endfor %}
+<style>
+    .product-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .product-box {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        width: 220px;
+        border-radius: 6px;
+    }
+
+    .product-box img {
+        width: 180px;
+        height: auto;
+    }
+</style>
+
+<div class="product-container">
+    {% for product in products %}
+        <div class="product-box">
+            <a href="{% url 'product_detail' product.id %}">
+                <img src="{{ product.image.url }}">
+            </a>
+            <p>₹{{ product.price }}</p>
+        </div>
+    {% endfor %}
+</div>
 
 
 </body>

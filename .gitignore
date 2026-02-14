@@ -3,6 +3,5 @@ __pycache__/
 *.pyc
 venv/
 
-# Django
-db.sqlite3
-media/
+
+

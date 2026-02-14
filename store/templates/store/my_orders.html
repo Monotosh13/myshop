@@ -5,42 +5,46 @@
 </head>
 <body>
 
-<h1>📦 My Orders</h1>
+<h1>My Orders 📦</h1>
 
 {% if orders %}
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Order ID</th>
-        <th>Date</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>
-
     {% for order in orders %}
-    <tr>
-        <td>#{{ order.id }}</td>
-        <td>{{ order.created_at }}</td>
-        <td>₹{{ order.total_price }}</td>
-        <td>{{ order.status }}</td>
-        <td>
-            {% if order.status != "CANCELLED" %}
-                <a href="{% url 'cancel_order' order.id %}">
-                    ❌ Cancel
-                </a>
-            {% else %}
-                —
-            {% endif %}
-        </td>
-    </tr>
+        <div style="border:1px solid black; padding:10px; margin-bottom:15px;">
+
+            <h3>Order #{{ order.id }}</h3>
+            <p><strong>Date:</strong> {{ order.created_at }}</p>
+            <p><strong>Grand Total:</strong> ₹{{ order.grand_total }}</p>
+
+            <p>
+                <strong>Status:</strong> 
+                {% if order.status == "PAYMENT_PENDING" %}
+                    <span style="color: orange;">Payment Pending</span>
+                {% elif order.status == "PLACED" %}
+                    <span style="color: green;">Approved</span>
+                {% elif order.status == "CANCELLED" %}
+                    <span style="color: red;">Cancelled</span>
+                {% endif %}
+            </p>
+
+            <h4>Items:</h4>
+            <ul>
+                {% for item in order.items.all %}
+                    <li>
+                        {{ item.variant.product.name }} 
+                        (Size: {{ item.variant.get_size_display }}) 
+                        × {{ item.quantity }} 
+                        — ₹{{ item.price }}
+                    </li>
+                {% endfor %}
+            </ul>
+
+        </div>
     {% endfor %}
-</table>
 {% else %}
-<p>No orders yet 😢</p>
+    <p>No orders yet.</p>
 {% endif %}
 
-<br>
-<a href="/">⬅ Continue Shopping</a>
+<a href="/">⬅ Back to Home</a>
 
 </body>
 </html>

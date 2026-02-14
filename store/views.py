@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product
+from .models import Product, ProductVariant
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .models import Order, OrderItem
+from .models import Product, ProductVariant, Order, OrderItem
+from decimal import Decimal
+
 
 # HOME
 def home(request):
@@ -19,19 +22,20 @@ def product_detail(request, product_id):
 
 # ADD TO CART
 def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    size = request.POST.get("size")
+
+    variant_id = request.POST.get("variant_id")
     quantity = int(request.POST.get("quantity", 1))
 
+    variant = get_object_or_404(ProductVariant, id=variant_id)
+
     cart = request.session.get("cart", {})
-    key = f"{product_id}_{size}"
+    key = str(variant_id)
 
     if key in cart:
         cart[key]["quantity"] += quantity
     else:
         cart[key] = {
-            "product_id": product_id,
-            "size": size,
+            "variant_id": variant_id,
             "quantity": quantity,
         }
 
@@ -46,21 +50,29 @@ def cart(request):
     total_price = 0
 
     for key, item in cart.items():
-        product = get_object_or_404(Product, id=item["product_id"])
+        variant_id = item.get("variant_id")
+
+        if not variant_id:
+            continue
+
+        # 🔥 THIS WAS MISSING
+        variant = get_object_or_404(ProductVariant, id=variant_id)
+
         quantity = item["quantity"]
 
-        item_total = product.price * quantity
+        item_total = variant.price * quantity
         total_price += item_total
 
         cart_items.append({
             "key": key,
-            "product": product,
-            "size": item["size"],
+            "product": variant.product,
+            "size": variant.get_size_display(),
+            "price": variant.price,
             "quantity": quantity,
             "item_total": item_total,
         })
 
-    gst = total_price * 0.18
+    gst = total_price * Decimal("0.18")
     grand_total = total_price + gst
 
     return render(request, "store/cart.html", {
@@ -69,7 +81,6 @@ def cart(request):
         "gst": gst,
         "grand_total": grand_total,
     })
-
 
 # REMOVE FROM CART
 def remove_from_cart(request, key):
@@ -83,8 +94,8 @@ def remove_from_cart(request, key):
 # 🔐 CHECKOUT (LOGIN REQUIRED)
 @login_required
 def checkout(request):
-    cart = request.session.get("cart", {})
 
+    cart = request.session.get("cart", {})
     if not cart:
         return redirect("cart")
 
@@ -92,43 +103,28 @@ def checkout(request):
     cart_items = []
 
     for item in cart.values():
-        product = Product.objects.get(id=item["product_id"])
+        variant = ProductVariant.objects.get(id=item["variant_id"])
         quantity = item["quantity"]
-        size = item["size"]
 
-        item_total = product.price * quantity
+        item_total = variant.price * quantity
         total_price += item_total
 
         cart_items.append({
-            "product": product,
+            "variant": variant,
             "quantity": quantity,
-            "size": size,
-            "price": product.price,
+            "item_total": item_total,
         })
 
-    gst = total_price * 0.18
+    gst = total_price * Decimal("0.18")
     grand_total = total_price + gst
 
     if request.method == "POST":
-        order = Order.objects.create(
-            user=request.user,
-            total_price=total_price,
-            gst=gst,
-            grand_total=grand_total,
-        )
-
-        for item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=item["product"],
-                size=item["size"],
-                quantity=item["quantity"],
-                price=item["price"],
-            )
-
-        request.session["cart"] = {}
-
-        return redirect("order_success")
+        request.session["customer_details"] = {
+            "name": request.POST["name"],
+            "phone": request.POST["phone"],
+            "address": request.POST["address"],
+        }
+        return redirect("payment")
 
     return render(request, "store/checkout.html", {
         "cart_items": cart_items,
@@ -136,6 +132,7 @@ def checkout(request):
         "gst": gst,
         "grand_total": grand_total,
     })
+
 
 @login_required
 def my_orders(request):
@@ -192,5 +189,80 @@ def signup_view(request):
 
 # 🔐 LOGOUT
 def logout_view(request):
+    # Save cart before logout
+    cart = request.session.get("cart", {})
+
+    # Logout (this flushes session)
     logout(request)
+
+    # Restore cart into new session
+    request.session["cart"] = cart
+
     return redirect("home")
+
+
+# Payment
+@login_required
+def payment(request):
+
+    cart = request.session.get("cart", {})
+    customer = request.session.get("customer_details")
+
+    if not cart or not customer:
+        return redirect("cart")
+
+    total_price = 0
+    cart_items = []
+
+    for item in cart.values():
+        variant = ProductVariant.objects.get(id=item["variant_id"])
+        quantity = item["quantity"]
+
+        item_total = variant.price * quantity
+        total_price += item_total
+
+        cart_items.append({
+            "variant": variant,
+            "quantity": quantity,
+            "price": variant.price,
+        })
+
+    gst = total_price * Decimal("0.18")
+    grand_total = total_price + gst
+
+    if request.method == "POST":
+
+        phone = request.POST.get("phone")
+        utr_last6 = request.POST.get("utr_last6")
+        screenshot = request.FILES.get("payment_screenshot")
+
+        order = Order.objects.create(
+            user=request.user,
+            name=customer["name"],
+            phone=phone,
+            address=customer["address"],
+            total_price=total_price,
+            gst=gst,
+            grand_total=grand_total,
+            utr_last6=utr_last6,
+            payment_screenshot=screenshot,
+            status="PAYMENT_PENDING"
+        )
+
+        for item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                variant=item["variant"],
+                quantity=item["quantity"],
+                price=item["price"],
+            )
+
+        request.session["cart"] = {}
+        request.session.pop("customer_details", None)
+
+        return redirect("order_success")
+
+    return render(request, "store/payment.html", {
+        "grand_total": grand_total
+    })
+

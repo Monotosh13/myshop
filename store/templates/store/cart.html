@@ -22,7 +22,7 @@
 <tr>
     <td>{{ item.product.name }}</td>
     <td>{{ item.size }}</td>
-    <td>₹{{ item.product.price }}</td>
+    <td>₹{{ item.price }}</td>
     <td>{{ item.quantity }}</td>
     <td>₹{{ item.item_total }}</td>
     <td>
@@ -32,9 +32,9 @@
 {% endfor %}
 </table>
 
-<p>Subtotal: ₹{{ total_price }}</p>
-<p>GST (18%): ₹{{ gst }}</p>
-<h3>Grand Total: ₹{{ grand_total }}</h3>
+<p>Subtotal: ₹{{ total_price|floatformat:2 }}</p>
+<p>GST (18%): ₹{{ gst|floatformat:2 }}</p>
+<h3>Grand Total: ₹{{ grand_total|floatformat:2 }}</h3>
 
 <a href="{% url 'checkout' %}">Proceed to Checkout</a>
 

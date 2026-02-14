@@ -2,6 +2,14 @@
 <html>
 <head>
     <title>{{ product.name }}</title>
+
+    <script>
+        function updatePrice() {
+            var select = document.getElementById("variantSelect");
+            var price = select.options[select.selectedIndex].getAttribute("data-price");
+            document.getElementById("priceDisplay").innerText = "₹" + price;
+        }
+    </script>
 </head>
 <body>
 
@@ -9,20 +17,25 @@
 
 <img src="{{ product.image.url }}" width="300">
 
-<p><strong>Price:</strong> ₹{{ product.price }}</p>
-
-<p><strong>Description:</strong><br>
-{{ product.description }}
+<p>
+    <strong>Price:</strong>
+    <span id="priceDisplay">
+        ₹{{ product.variants.first.price }}
+    </span>
 </p>
+
+<p>{{ product.description }}</p>
 
 <form method="post" action="{% url 'add_to_cart' product.id %}">
     {% csrf_token %}
 
-    <label>Size:</label>
-    <select name="size" required>
-        <option value="S">Small</option>
-        <option value="M">Medium</option>
-        <option value="L">Large</option>
+    <label>Select Size:</label>
+    <select name="variant_id" id="variantSelect" onchange="updatePrice()" required>
+        {% for variant in product.variants.all %}
+            <option value="{{ variant.id }}" data-price="{{ variant.price }}">
+                {{ variant.get_size_display }}
+            </option>
+        {% endfor %}
     </select>
 
     <br><br>
@@ -34,9 +47,6 @@
 
     <button type="submit">Add to Cart</button>
 </form>
-
-<br>
-<a href="/">⬅ Back to Home</a>
 
 </body>
 </html>
